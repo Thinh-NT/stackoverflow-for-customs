@@ -2,6 +2,7 @@ from pathlib import Path
 import os
 import datetime
 from django.conf import settings
+import logging.config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -41,9 +42,13 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
 
     'rest_framework',
+
+    # Delete when production,
+    'nplusone.ext.django',
 ]
 
 SITE_ID = 1
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -53,7 +58,60 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # Delete when production
+    'nplusone.ext.django.NPlusOneMiddleware',
 ]
+
+NPLUSONE_LOGGER = logging.getLogger('nplusone')
+NPLUSONE_LOG_LEVEL = logging.WARN
+
+SERVER_EMAIL = 'thanhthinhkrb@gmail.com'
+ADMINS = [
+    ('thinhnt', 'thanhthinhkrb@gmail.com'),
+]
+MANAGERS = ADMINS
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse'
+        }
+    },
+    'handlers': {
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler',
+            'include_html': True
+        },
+        'logfile': {
+            'class': 'logging.handlers.WatchedFileHandler',
+            'filename': BASE_DIR / 'uni.log'
+        },
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        # 'django.request': {
+        #     'handlers': ['mail_admins'],
+        #     'level': 'ERROR',
+        #     'propagate': True,
+        # },
+        # 'django': {
+        #     'handlers': ['logfile'],
+        #     'level': 'ERROR',
+        #     'propagate': False,
+        # },
+        'nplusone': {
+            'handlers': ['console'],
+            'level': 'WARN',
+        },
+    }
+}
 
 ROOT_URLCONF = 'site_config.urls'
 

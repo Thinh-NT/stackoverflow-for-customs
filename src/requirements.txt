@@ -1,0 +1,10 @@
+autopep8
+django-autoslug
+django-contrib-comments
+djoser
+docutils
+drf-yasg
+mysqlclient
+nplusone
+pillow
+pip-chill

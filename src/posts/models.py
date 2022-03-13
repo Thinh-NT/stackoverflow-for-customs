@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from autoslug import AutoSlugField
+from django.urls import reverse
 
 
 User = get_user_model()
@@ -22,6 +23,7 @@ class Post(models.Model):
     timestamp = models.DateTimeField(auto_now_add=True)
 
     views_count = models.IntegerField(default=0)
+    comments_count = models.IntegerField(default=0)
 
     categories = models.ManyToManyField(Category, related_name='posts')
 
@@ -31,8 +33,8 @@ class Post(models.Model):
     def __str__(self):
         return self.title
 
-    def comments_count(self):
-        return self.comments.count()
+    def get_absolute_url(self):
+        return reverse('post-detail', args=[str(self.slug)])
 
     def upvotes_count(self):
         return self.upvote_set.count()
@@ -45,13 +47,21 @@ class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     content = models.TextField()
+
+    display = models.BooleanField(default=True)
+    replies_count = models.IntegerField(default=0)
+
     post = models.ForeignKey(
         Post,
         related_name='comments',
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        null=True, blank=True
     )
     parent = models.ForeignKey(
         'self', on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self) -> str:
+        return f'By {self.user}: {self.content} at {self.timestamp.strftime("%m/%d/%Y, %H:%M:%S")}'
 
 
 class DownVote(models.Model):

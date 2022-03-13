@@ -1,7 +1,28 @@
-from turtle import title
 from rest_framework import serializers
 
 from .models import Post, Comment, Category
+from django.utils.timezone import now
+
+
+def td_format(td_object):
+    seconds = int(td_object.total_seconds())
+    periods = [
+        ('year',        60*60*24*365),
+        ('month',       60*60*24*30),
+        ('day',         60*60*24),
+        ('hour',        60*60),
+        ('minute',      60),
+        ('second',      1)
+    ]
+
+    strings = []
+    for period_name, period_seconds in periods:
+        if seconds > period_seconds:
+            period_value, seconds = divmod(seconds, period_seconds)
+            has_s = 's' if period_value > 1 else ''
+            strings.append("%s %s%s" % (period_value, period_name, has_s))
+
+    return ", ".join(strings)
 
 
 class UniModelSerializer(serializers.HyperlinkedModelSerializer):
@@ -21,10 +42,29 @@ class CategorySerializer(UniModelSerializer):
         fields = ['title']
 
 
-class CommentSerializer(UniModelSerializer):
+class ReplySerializer(serializers.ModelSerializer):
+    write_since = serializers.SerializerMethodField()
+    is_owner = serializers.SerializerMethodField()
+
     class Meta:
         model = Comment
-        fields = '__all__'
+        exclude = ['timestamp']
+
+    def get_write_since(self, obj):
+        return td_format(now() - obj.timestamp) + ' ago'
+
+    def get_is_owner(self, obj):
+        request = self.context.get('request', None)
+        if request:
+            return request.user.email == obj.user.email
+
+
+class CommentSerializer(ReplySerializer):
+    replies = serializers.SerializerMethodField()
+
+    def get_replies(self, obj):
+        serializer = ReplySerializer(obj.comment_set.all(), many=True)
+        return serializer.data
 
 
 class PostSerializer(UniModelSerializer):

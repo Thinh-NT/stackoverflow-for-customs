@@ -7,10 +7,11 @@ from rest_framework.response import Response
 class PostView(viewsets.ModelViewSet):
     serializer_class = PostSerializer
     lookup_field = 'slug'
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
-        queryset = Post.objects.all().prefetch_related('categories')
+        queryset = Post.objects.all().prefetch_related(
+            'categories', 'comments__user', 'comments__comment_set')
         return queryset
 
     def perform_create(self, serializer):
