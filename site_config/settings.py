@@ -96,16 +96,16 @@ LOGGING = {
         },
     },
     'loggers': {
-        # 'django.request': {
-        #     'handlers': ['mail_admins'],
-        #     'level': 'ERROR',
-        #     'propagate': True,
-        # },
-        # 'django': {
-        #     'handlers': ['logfile'],
-        #     'level': 'ERROR',
-        #     'propagate': False,
-        # },
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
         'nplusone': {
             'handlers': ['console'],
             'level': 'WARN',
