@@ -3,6 +3,12 @@ from django.urls import path, include, re_path
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
+from django.conf import settings
+from django.views.static import serve
+from .views import CustomJWTCreate
+from notifications.views import home  # Importing basic home view
+from notifications.views import notification_test_page
+from notifications.consumers import NotificationConsumer
 
 # DRF YASG
 schema_view = get_schema_view(
@@ -26,7 +32,13 @@ urlpatterns = [
         name="schema-swagger-ui",
     ),
 
+
+    # noti
+    path("", home, name="home"),
+    path("notifications-test/", notification_test_page, name="notifications-test"),
+
     # Djoser
+    path('auth/jwt/create/', CustomJWTCreate.as_view()),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
 
@@ -36,3 +48,10 @@ urlpatterns = [
     # Apps
     path("api/posts/", include("posts.urls")),
 ]
+
+if settings.DEBUG:
+    urlpatterns += [
+        re_path(r'^media/(?P<path>.*)$', serve, {
+            'document_root': settings.MEDIA_ROOT
+        }),
+    ]

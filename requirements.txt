@@ -1,5 +1,7 @@
 autopep8
+channels-redis
 django-autoslug
+django-channels
 django-contrib-comments
 djoser
 docutils
@@ -8,3 +10,4 @@ mysqlclient
 nplusone
 pillow
 pip-chill
+pyopenssl

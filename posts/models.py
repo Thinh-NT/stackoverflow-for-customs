@@ -18,7 +18,6 @@ class Post(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
 
     title = models.CharField(max_length=100)
-    overview = models.TextField()
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
@@ -26,9 +25,11 @@ class Post(models.Model):
     comments_count = models.IntegerField(default=0)
 
     categories = models.ManyToManyField(Category, related_name='posts')
+    people_involved = models.ManyToManyField(
+        User, related_name='posts', blank=True)
 
     slug = AutoSlugField(populate_from='title',
-                         unique_with=['author__username', 'timestamp__day'])
+                         unique_with=['title'])
 
     def __str__(self):
         return self.title
@@ -78,3 +79,8 @@ class UpVote(models.Model):
         Post, on_delete=models.CASCADE, blank=True, null=True)
     comment = models.ForeignKey(
         Comment, on_delete=models.CASCADE, blank=True, null=True)
+
+
+class Image(models.Model):
+    upload = models.ImageField(upload_to='images/')
+    timestamp = models.DateTimeField(auto_now_add=True)

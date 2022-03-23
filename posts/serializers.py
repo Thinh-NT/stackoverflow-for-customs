@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Post, Comment, Category
+from .models import Post, Comment, Category, Image
 from django.utils.timezone import now
 
 
@@ -56,7 +56,10 @@ class ReplySerializer(serializers.ModelSerializer):
     def get_is_owner(self, obj):
         request = self.context.get('request', None)
         if request:
-            return request.user.email == obj.user.email
+            try:
+                return request.user.email == obj.user.email
+            except AttributeError:
+                return False
 
 
 class CommentSerializer(ReplySerializer):
@@ -68,8 +71,6 @@ class CommentSerializer(ReplySerializer):
 
 
 class PostSerializer(UniModelSerializer):
-    comments = CommentSerializer(many=True, read_only=True)
-
     comments_count = serializers.IntegerField(required=False)
     upvotes_count = serializers.IntegerField(required=False)
     downvotes_count = serializers.IntegerField(required=False)
@@ -78,8 +79,8 @@ class PostSerializer(UniModelSerializer):
 
     class Meta:
         model = Post
-        exclude = ['author']
-        extra_fields = ['url', 'id']
+        exclude = ['author', 'people_involved']
+        extra_fields = ['url', 'id', ]
         lookup_field = 'slug'
         extra_kwargs = {
             'url': {'lookup_field': 'slug'}
@@ -111,3 +112,22 @@ class PostSerializer(UniModelSerializer):
                 instance.categories.add(Category.objects.create(title=title))
 
         return super().update(instance, validated_data)
+
+
+class PostDetailSerializer(PostSerializer):
+    comments = ReplySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Post
+        exclude = ['author', 'people_involved']
+        extra_fields = ['url', 'id']
+        lookup_field = 'slug'
+        extra_kwargs = {
+            'url': {'lookup_field': 'slug'}
+        }
+
+
+class ImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Image
+        fields = ('upload', 'timestamp')

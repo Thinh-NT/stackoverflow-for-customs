@@ -17,7 +17,7 @@ SECRET_KEY = 'django-insecure-(fq75niz3o802+k42y*4$@8!_(uywr6qwnv#c&2m!%8zdq+8$q
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*', '192.168.1.69', '192.168.1.96']
 
 
 # Application definition
@@ -30,6 +30,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
 
+    'channels',
+    'notifications',
+
     # local
     'posts',
 
@@ -37,6 +40,7 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     # Auth
+    'corsheaders',
     'accounts',
     'djoser',
     'rest_framework_simplejwt',
@@ -49,8 +53,10 @@ INSTALLED_APPS = [
 
 SITE_ID = 1
 
+CORS_ORIGIN_ALLOW_ALL = True
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -153,18 +159,18 @@ DATABASES = {
 # https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
 
 AUTH_PASSWORD_VALIDATORS = [
-    {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
-    },
-    {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
-    },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    # },
+    # {
+    #     'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    # },
 ]
 
 SERVER_EMAIL = 'thanhthinhkrb@gmail.com'
@@ -214,7 +220,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    'PAGE_SIZE': 50
+    'PAGE_SIZE': 10
 }
 
 SIMPLE_JWT = {
@@ -256,3 +262,26 @@ DJOSER = {
 # CORS HEADERS
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
+
+# Django Channels
+# your_project_name.routing.application
+ASGI_APPLICATION = "notifications.routing.application"
+
+# Adding Django Channel Layers
+redis_host = [{
+    # don't miss the 'rediss'!
+    'address': f'rediss://thinh:{os.environ["REDIS_PASSWORD"]}@192.168.1.99:6379',
+}]
+CHANNEL_LAYERS = {
+    'default': {
+        # Method 1: Via redis lab
+        # "BACKEND": "channels_redis.core.RedisChannelLayer",
+        # "CONFIG": {
+        #     "hosts": redis_host,
+        # },
+
+        # Method 2: Via In-memory channel layer
+        # Using this method.
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    },
+}
