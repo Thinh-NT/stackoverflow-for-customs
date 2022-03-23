@@ -304,7 +304,7 @@ ASGI_APPLICATION = "notifications.routing.application"
 # Adding Django Channel Layers
 redis_host = [{
     # don't miss the 'rediss'!
-    'address': f'redis://{os.environ["REDIS_PASSWORD"]}@192.168.1.99:6379',
+    'address': f'rediss://{os.environ["REDIS_PASSWORD"]}@192.168.1.99:6379',
 }]
 CHANNEL_LAYERS = {
     'default': {
@@ -314,8 +314,14 @@ CHANNEL_LAYERS = {
         #     "hosts": redis_host,
         # },
 
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [f"redis://:{os.environ['REDIS_PASSWORD']}@192.168.1.99/0"],
+            "symmetric_encryption_keys": [SECRET_KEY],
+        },
+
         # Method 2: Via In-memory channel layer
         # Using this method.
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
+        # "BACKEND": "channels.layers.InMemoryChannelLayer"
     },
 }

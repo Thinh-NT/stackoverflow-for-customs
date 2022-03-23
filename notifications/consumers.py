@@ -45,5 +45,4 @@ class NotificationConsumer(WebsocketConsumer):
 
     # Custom Notify Function which can be called from Views or api to send message to the frontend
     def notify(self, event):
-        print(self.user)
         self.send(text_data=json.dumps(event["text"]))
