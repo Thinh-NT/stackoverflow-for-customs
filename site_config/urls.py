@@ -8,7 +8,7 @@ from django.views.static import serve
 from .views import CustomJWTCreate
 from notifications.views import home  # Importing basic home view
 from notifications.views import notification_test_page
-from notifications.consumers import NotificationConsumer
+
 
 # DRF YASG
 schema_view = get_schema_view(
@@ -39,6 +39,7 @@ urlpatterns = [
 
     # Djoser
     path('auth/jwt/create/', CustomJWTCreate.as_view()),
+    path('', include('accounts.urls')),
     path('auth/', include('djoser.urls')),
     path('auth/', include('djoser.urls.jwt')),
 
@@ -47,6 +48,7 @@ urlpatterns = [
 
     # Apps
     path("api/posts/", include("posts.urls")),
+    path("api/notifications/", include("notifications.urls")),
 ]
 
 if settings.DEBUG:

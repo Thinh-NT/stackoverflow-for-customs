@@ -1,10 +1,17 @@
-from django.http import HttpResponse, JsonResponse
-from rest_framework import viewsets, status, permissions
-from .serializers import CommentSerializer, PostSerializer, ImageSerializer, ReplySerializer, PostDetailSerializer
-from .models import Category, Comment, Post, Image
+from django.http import JsonResponse
+from notifications.models import Notification
+from notifications.views import notify_user
+from rest_framework import generics, status, views, viewsets, permissions
 from rest_framework.response import Response
-from rest_framework import views
-from rest_framework import generics
+from rest_framework.decorators import permission_classes
+from .models import Comment, Post
+from .serializers import (ImageSerializer, PostDetailSerializer,
+                          PostSerializer, ReplySerializer)
+
+
+def notify_to_group_people(to_, data):
+    for x in to_:
+        notify_user(x, data)
 
 
 class PostView(viewsets.ModelViewSet):
@@ -16,7 +23,8 @@ class PostView(viewsets.ModelViewSet):
         return PostSerializer
 
     def get_queryset(self):
-        queryset = Post.objects.all().prefetch_related('categories')
+        queryset = Post.objects.all().prefetch_related(
+            'categories')
         return queryset.order_by('-timestamp')
 
     def perform_create(self, serializer):
@@ -35,6 +43,25 @@ class PostView(viewsets.ModelViewSet):
 
 
 class UploadImage(views.APIView):
+    permission_classes = {
+        "GET": [permissions.AllowAny],
+        "POST": [permissions.IsAuthenticated]
+    }
+
+    def get_permissions(self):
+        # Instances and returns the dict of permissions that the view requires.
+        return {key: [permission() for permission in permissions] for key, permissions in self.permission_classes.items()}
+
+    def check_permissions(self, request):
+        # Gets the request method and the permissions dict, and checks the permissions defined in the key matching
+        # the method.
+        method = request.method
+        for permission in self.get_permissions()[method]:
+            if not permission.has_permission(request, self):
+                self.permission_denied(
+                    request, message=getattr(permission, 'message', None)
+                )
+
     def post(self, request, *args, **kwargs):
         image_serializer = ImageSerializer(data=request.data)
         if image_serializer.is_valid():
@@ -42,7 +69,7 @@ class UploadImage(views.APIView):
         return JsonResponse(
             {
                 "uploaded": True,
-                "url": f'http://localhost:8000/media/{image.upload.name}'
+                "url": f'{image.upload.url}'
             }
         )
 
@@ -74,9 +101,14 @@ class CommentView(generics.ListAPIView):
                 queryset = comment.comment_set.all()
             except Comment.DoesNotExist:
                 queryset = Comment.objects.none()
-        return queryset
+        return queryset.prefetch_related('user').order_by('-timestamp')
 
     def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return Response({
+                'Error': 'Login to comment'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+
         post_id = request.data.get('post_id')
         comment_id = request.data.get('comment_id')
         content = request.data.get('content')
@@ -94,24 +126,38 @@ class CommentView(generics.ListAPIView):
         if post_id:
             try:
                 post = Post.objects.get(id=post_id)
-                Comment.objects.create(
+                comment = Comment.objects.create(
                     user=request.user, post=post, content=content
                 )
+                people_involved = post.people_involved.exclude(
+                    pk=request.user.pk)
+                Notification.objects.bulk_create(
+                    [
+                        Notification(user=x, content='Someone comment at your post', reference=f'question/{post.slug}') for x in people_involved
+                    ]
+                )
+                # Trigger message sent to group
+                data = 'Someone comment at your post'
+                notify_to_group_people(
+                    people_involved, data
+                )
+                serializer = ReplySerializer(comment)
+                return Response(serializer.data, status=202)
+
             except Post.DoesNotExist:
                 return Response({
                     'Error': 'Post does not exists'
                 }, status=status.HTTP_404_NOT_FOUND)
-            return HttpResponse(post.downvote_set.count(), status=202)
 
         if comment_id:
             try:
                 comment = Comment.objects.get(id=comment_id)
-                Comment.objects.create(
+                new_comment = Comment.objects.create(
                     user=request.user, parent=comment, content=content
                 )
+                serializer = ReplySerializer(new_comment)
+                return Response(serializer.data, status=202)
             except Comment.DoesNotExist:
                 return Response({
                     'Error': 'Comment does not exists'
                 }, status=status.HTTP_404_NOT_FOUND)
-
-            return HttpResponse(status=202)

@@ -1,19 +1,18 @@
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
-from datetime import datetime
 from django.shortcuts import render
+from rest_framework import viewsets
+from .serializers import NotificationDetailSerializer, NotificationSerializer
+from .models import Notification
 
 
-def notify_user(user, content, reference=None):
+def notify_user(user, data):
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
-        str(user.pk),
+        str(user.pk),  # Channel Name, Should always be string
         {
-            "type": "notify",
-            "content": {
-                "body": "content",
-                "reference": reference
-            }
+            "type": "notify",   # Custom Function written in the consumers.py
+            "text": data,
         },
     )
 
@@ -25,15 +24,26 @@ def home(request):
 def notification_test_page(request):
     # Django Channels Notifications Test
     current_user = request.user
-    channel_layer = get_channel_layer()
-    data = "notification at " + \
-        str(datetime.now().date()) + ' for user ' + current_user.username
+    data = "Hey, check notifications plz."
     # Trigger message sent to group
-    async_to_sync(channel_layer.group_send)(
-        str(current_user.pk),  # Channel Name, Should always be string
-        {
-            "type": "notify",   # Custom Function written in the consumers.py
-            "text": data,
-        },
-    )
+    notify_user(current_user, data)
     return render(request, 'noti/notifications_test_page.html')
+
+
+class NotificationView(viewsets.ModelViewSet):
+    http_method_names = ['get']
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return NotificationDetailSerializer
+        return NotificationSerializer
+
+    def get_queryset(self):
+        queryset = Notification.objects.filter(user=self.request.user)
+        return queryset.order_by('-timestamp')
+
+    def retrieve(self, request, *args, **kwargs):
+        obj = self.get_object()
+        obj.is_read = True
+        obj.save()
+        return super().retrieve(request, *args, **kwargs)

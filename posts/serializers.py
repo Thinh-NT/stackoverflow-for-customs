@@ -1,7 +1,7 @@
+from django.utils.timezone import now
 from rest_framework import serializers
 
-from .models import Post, Comment, Category, Image
-from django.utils.timezone import now
+from .models import Category, Comment, Image, Post
 
 
 def td_format(td_object):
@@ -25,7 +25,7 @@ def td_format(td_object):
     return ", ".join(strings)
 
 
-class UniModelSerializer(serializers.HyperlinkedModelSerializer):
+class UniModelSerializer(serializers.ModelSerializer):
     def get_field_names(self, declared_fields, info):
         expanded_fields = super(UniModelSerializer, self).get_field_names(
             declared_fields, info)
@@ -42,15 +42,19 @@ class CategorySerializer(UniModelSerializer):
         fields = ['title']
 
 
-class ReplySerializer(serializers.ModelSerializer):
+class ReplySerializer(UniModelSerializer):
     write_since = serializers.SerializerMethodField()
     is_owner = serializers.SerializerMethodField()
+    username = serializers.CharField(source='user.username')
 
     class Meta:
         model = Comment
-        exclude = ['timestamp']
+        extra_fields = ['username']
+        exclude = ['timestamp', 'user', 'post', 'parent']
 
     def get_write_since(self, obj):
+        if td_format(now() - obj.timestamp) == '':
+            return 'Just now'
         return td_format(now() - obj.timestamp) + ' ago'
 
     def get_is_owner(self, obj):
@@ -115,8 +119,6 @@ class PostSerializer(UniModelSerializer):
 
 
 class PostDetailSerializer(PostSerializer):
-    comments = ReplySerializer(many=True, read_only=True)
-
     class Meta:
         model = Post
         exclude = ['author', 'people_involved']

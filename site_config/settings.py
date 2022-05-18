@@ -284,7 +284,7 @@ DJOSER = {
     "SERIALIZERS": {
         "user_create": "accounts.serializers.UserCreateSerializer",  # custom serializer
         "user": "djoser.serializers.UserSerializer",
-        "current_user": "djoser.serializers.UserSerializer",
+        "current_user": "accounts.serializers.UniUserSerializer",
         "user_delete": "djoser.serializers.UserSerializer",
     },
     # "SOCIAL_AUTH_ALLOWED_REDIRECT_URIS": [
@@ -314,14 +314,14 @@ CHANNEL_LAYERS = {
         #     "hosts": redis_host,
         # },
 
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [f"redis://:{os.environ['REDIS_PASSWORD']}@192.168.1.99/0"],
-            "symmetric_encryption_keys": [SECRET_KEY],
-        },
+        # "BACKEND": "channels_redis.core.RedisChannelLayer",
+        # "CONFIG": {
+        #     "hosts": [f"redis://:{os.environ['REDIS_PASSWORD']}@192.168.1.99/0"],
+        #     "symmetric_encryption_keys": [SECRET_KEY],
+        # },
 
         # Method 2: Via In-memory channel layer
         # Using this method.
-        # "BACKEND": "channels.layers.InMemoryChannelLayer"
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
     },
 }

@@ -22,7 +22,8 @@ def get_user(token_key):
     # If you are using jwt
     try:
         user_id: int = jwt.decode(token_key, SECRET_KEY, algorithms=[
-                                  SIMPLE_JWT['ALGORITHM']]).get(SIMPLE_JWT['USER_ID_CLAIM'])
+                                  SIMPLE_JWT['ALGORITHM']
+                                  ]).get(SIMPLE_JWT['USER_ID_CLAIM'])
     except jwt.exceptions.DecodeError:
         return AnonymousUser()
     except jwt.exceptions.ExpiredSignatureError:
