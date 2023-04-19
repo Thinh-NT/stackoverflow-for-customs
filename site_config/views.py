@@ -3,8 +3,6 @@ from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from django.contrib.auth.models import update_last_login
-from rest_framework_simplejwt.settings import api_settings
 
 
 class CustomTokenObtain(TokenObtainPairSerializer):
